@@ -1,62 +1,73 @@
 Шапка Денис
 
-Лабораторна робота 1 Хешування
-Завдання Дослідити існуючі механізми гешування. Реалізувати алгоритм гешування SHA (будь-якої версії).
-Мета Дослідити принципи роботи гешування.
+Лабораторна робота 2 Симетричне шифрування. Алгоритм AES
+Дослідити принципи роботи симетричного шифрування на прикладі алгоритму AES.
+
 Текст програми
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 using System.IO;
 
-namespace Lab1
+namespace AES
 {
-    class Program
+    class Crypter
     {
-        public static string Shifrovka(string ishText, string pass,
-               string sol = "Kitty", string cryptographicAlgorithm = "SHA1",
-               int passIter = 2, string initVec = "a8doSuDitOz1hZe#",
-               int keySize = 256)
+        private System.Security.Cryptography.AesCryptoServiceProvider CryptKey;
+
+        public Crypter(string key, string iv)
         {
-            byte[] initVecB = Encoding.ASCII.GetBytes(initVec);
-            byte[] solB = Encoding.ASCII.GetBytes(sol);
-            byte[] ishTextB = Encoding.UTF8.GetBytes(ishText);
-
-            PasswordDeriveBytes derivPass = new PasswordDeriveBytes(pass, solB, cryptographicAlgorithm, passIter);
-            byte[] keyBytes = derivPass.GetBytes(keySize / 8);
-            RijndaelManaged symmK = new RijndaelManaged();
-            symmK.Mode = CipherMode.CBC;
-
-            byte[] cipherTextBytes = null;
-
-            using (ICryptoTransform encryptor = symmK.CreateEncryptor(keyBytes, initVecB))
-            {
-                using (MemoryStream memStream = new MemoryStream())
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream(memStream, encryptor, CryptoStreamMode.Write))
-                    {
-                        cryptoStream.Write(ishTextB, 0, ishTextB.Length);
-                        cryptoStream.FlushFinalBlock();
-                        cipherTextBytes = memStream.ToArray();
-                        memStream.Close();
-                        cryptoStream.Close();
-                    }
-                }
-            }
-
-            symmK.Clear();
-            return Convert.ToBase64String(cipherTextBytes);
+            //создает объект шифрования который использует ключ (Key) и инициализирует вектор (IV). 
+            CryptKey = new System.Security.Cryptography.AesCryptoServiceProvider();
+            //Block size : задает размер блока в битах
+            CryptKey.BlockSize = 128;
+            //KeySize: задает размер ключа в битах
+            CryptKey.KeySize = 128;
+            //Key: задает симметричный ключ, который используется для шифрования и дешифрования.
+            CryptKey.Key = System.Text.Encoding.UTF8.GetBytes(key).Take(16).ToArray();
+            //IV : задает вектор инициализации (IV) симметричного алгоритма
+            CryptKey.IV = System.Text.Encoding.UTF8.GetBytes(iv).Take(16).ToArray();
+            //Padding: задает режим используемый в симметричном алгоритме
+            CryptKey.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
+            //Mode: задает режим симметричного алгоритма
+            CryptKey.Mode = System.Security.Cryptography.CipherMode.CBC;
         }
 
+        //шифрование
+        public byte[] Encrypt(byte[] dataToEncrypt)
+        {
+            //Создает симметричный AES объект
+            var crypto = CryptKey.CreateEncryptor(CryptKey.Key, CryptKey.IV);
+            //TransformFinalBlock - функция трансформации последнего блока или части блока в поток.
+            //Возвращает массив, который содержит преобразованные байты.
+            byte[] encryptedData = crypto.TransformFinalBlock(dataToEncrypt, 0, dataToEncrypt.Length);
+            crypto.Dispose();
+            return encryptedData;
+        }
 
+        //дешифрование
+        public byte[] Decrypt(byte[] dataToDecrypt)
+        {
+            var crypto = CryptKey.CreateDecryptor(CryptKey.Key, CryptKey.IV);
+            byte[] decryptedData = crypto.TransformFinalBlock(dataToDecrypt, 0, dataToDecrypt.Length);
+            crypto.Dispose();
+            return decryptedData;
+        }
+    }
+    class Program
+    {
         static void Main(string[] args)
         {
-
-            String gg = Shifrovka("Shapka, 922v", "пароль");
-            Console.WriteLine(gg);
-            Console.WriteLine("Shapka, 922v");
+            var crypter = new Crypter("my key to encryption", "my vector of crypting");
+            var data = Encoding.ASCII.GetBytes("I've done AES-128 crypter!");
+            var encrypted = crypter.Encrypt(data);
+            var decrypted = crypter.Decrypt(encrypted);
+            Console.WriteLine($"До шифрования     : {string.Join(" ", data)}");
+            Console.WriteLine($"После шифрования  : {string.Join(" ", encrypted)}");
+            Console.WriteLine($"После дешифрования: {string.Join(" ", decrypted)}");
+            Console.ReadKey();
         }
     }
 }
