@@ -1,0 +1,36 @@
+{
+
+  "dependencies": {
+
+    "big-integer": "^1.6.51",
+
+    "node-rsa": "^1.1.1"
+
+  },
+
+  "name": "lab3",
+
+  "version": "1.0.0",
+
+  "main": "index.js",
+
+  "directories": {
+
+    "doc": "doc"
+
+  },
+
+  "scripts": {
+
+    "test": "node ./src/index.js"
+
+  },
+
+  "author": "",
+
+  "license": "ISC",
+
+  "description": ""
+
+}
+
